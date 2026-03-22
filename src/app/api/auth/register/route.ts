@@ -1,20 +1,18 @@
 export const runtime = 'edge';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { register } from '../../../../lib/services/authService'
-import { RegisterSchema } from '../../../../lib/services/authService'
-import { badRequest } from '../../../../lib/middleware/auth'
+import { register } from '@/lib/edge-auth'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const validated = RegisterSchema.safeParse(body)
+    const { email, password, name, gymId, role } = body
 
-    if (!validated.success) {
-      return badRequest('Invalid input: ' + validated.error.issues[0].message)
+    if (!email || !password || !gymId) {
+      return NextResponse.json({ error: 'Email, password and gymId required' }, { status: 400 })
     }
 
-    const result = await register(validated.data)
+    const result = await register({ email, password, name, gymId, role })
 
     return NextResponse.json({
       user: result.user,
@@ -22,9 +20,6 @@ export async function POST(req: NextRequest) {
     }, { status: 201 })
   } catch (error: any) {
     console.error('Register error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to register' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: error.message || 'Failed to register' }, { status: 400 })
   }
 }

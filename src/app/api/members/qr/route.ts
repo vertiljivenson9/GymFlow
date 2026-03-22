@@ -1,9 +1,7 @@
 export const runtime = 'edge';
 
-// QR Access API - No login required for members
 import { NextRequest, NextResponse } from 'next/server'
-import { validateQRAccess } from '../../../../lib/services/memberService'
-import { badRequest } from '../../../../lib/middleware/auth'
+import { getDb } from '@/lib/firebase-admin'
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,42 +10,74 @@ export async function GET(req: NextRequest) {
     const gymId = searchParams.get('gymId')
 
     if (!qrCode || !gymId) {
-      return badRequest('Missing qr or gymId parameter')
+      return NextResponse.json({ error: 'Missing qr or gymId parameter' }, { status: 400 })
     }
 
-    // Rate limiting would be added here in production
-    // For now, we allow all requests
+    const db = await getDb()
 
-    const result = await validateQRAccess(gymId, qrCode)
-
-    if (!result.valid) {
-      return NextResponse.json(
-        { 
-          valid: false, 
-          error: result.error,
-          member: result.member ? {
-            id: result.member.id,
-            name: result.member.name,
-          } : undefined,
+    if (!db) {
+      // Demo mode
+      return NextResponse.json({
+        valid: true,
+        member: {
+          id: 'demo-member',
+          name: 'Demo Member',
+          level: 'intermediate'
         },
-        { status: 403 }
-      )
+        membership: {
+          status: 'active',
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        demo: true
+      })
+    }
+
+    // Find member by QR code
+    const snapshot = await db.collection('members')
+      .where('qrCode', '==', qrCode)
+      .where('gymId', '==', gymId)
+      .limit(1)
+      .get()
+
+    if (snapshot.empty) {
+      return NextResponse.json({
+        valid: false,
+        error: 'Invalid QR code'
+      }, { status: 403 })
+    }
+
+    const memberDoc = snapshot.docs[0]
+    const memberData = memberDoc.data()
+
+    // Check membership status
+    const membershipSnapshot = await db.collection('memberships')
+      .where('memberId', '==', memberDoc.id)
+      .where('status', '==', 'active')
+      .limit(1)
+      .get()
+
+    if (membershipSnapshot.empty) {
+      return NextResponse.json({
+        valid: false,
+        error: 'No active membership',
+        member: { id: memberDoc.id, name: memberData.name }
+      }, { status: 403 })
     }
 
     return NextResponse.json({
       valid: true,
       member: {
-        id: result.member!.id,
-        name: result.member!.name,
-        level: result.member!.level,
+        id: memberDoc.id,
+        name: memberData.name,
+        level: memberData.level || 'beginner'
       },
-      membership: result.membership,
+      membership: {
+        id: membershipSnapshot.docs[0].id,
+        ...membershipSnapshot.docs[0].data()
+      }
     })
   } catch (error) {
     console.error('QR validation error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
