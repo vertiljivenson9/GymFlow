@@ -1691,61 +1691,124 @@ function TemplateEditor({
 }
 
 // ============================================
-// QR PANEL
+// QR PANEL - Production SaaS Implementation
 // ============================================
 function QRPanel({ gym, members }: { gym: any; members: Member[] }) {
-  // Generate the full URL for the gym check-in page
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gym-flow-wine.vercel.app'
+  // Get gym slug (prefer slug over ID for better SEO/branding)
+  const gymSlug = gym?.slug || gym?.id || gym?.gymId || 'demo-gym'
   const gymId = gym?.id || gym?.gymId || 'demo-gym'
-  const gymSlug = gym?.slug || gymId
   
-  // QR URL that opens the gym page
-  const gymQrUrl = `${baseUrl}/gym/${gymSlug}`
+  // Dynamic base URL - works in preview deployments too
+  const getBaseUrl = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.origin
+    }
+    return process.env.NEXT_PUBLIC_APP_URL || 'https://gym-flow-wine.vercel.app'
+  }
   
-  // Member QR URLs
-  const getMemberQrUrl = (member: Member) => {
-    return `${baseUrl}/gym/${gymSlug}?member=${member.id}&code=${member.qrCode}`
+  const baseUrl = getBaseUrl()
+  
+  // Use /g/[slug]/checkin structure (SaaS best practice)
+  // - More readable
+  // - Better SEO
+  // - Allows branding
+  // - Doesn't expose internal IDs
+  const gymCheckinUrl = `${baseUrl}/g/${gymSlug}/checkin`
+  
+  // Member check-in URLs with tracking
+  const getMemberCheckinUrl = (member: Member) => {
+    return `${baseUrl}/g/${gymSlug}/checkin?member=${member.id}&code=${member.qrCode}`
   }
 
   return (
-    <div style={{ textAlign: 'center', padding: '2rem', backgroundColor: '#fff', border: '1px solid #e5e5e5' }}>
+    <div style={{ textAlign: 'center', padding: '2rem', backgroundColor: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}>
       <h3 style={{ marginBottom: '0.5rem' }}>Código QR del Gimnasio</h3>
       <p style={{ color: '#666', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-        Los miembros escanean este código para acceder a su entrenamiento
+        Los miembros escanean este código para hacer check-in
       </p>
       
       <div style={{ 
         padding: '1.5rem', 
-        backgroundColor: '#fff', 
+        backgroundColor: '#fafafa', 
         border: '2px solid #000', 
         display: 'inline-block',
-        marginBottom: '1rem'
+        marginBottom: '1rem',
+        borderRadius: '8px'
       }}>
         <QRCodeSVG 
-          value={gymQrUrl} 
-          size={180}
+          value={gymCheckinUrl} 
+          size={200}
           level="H"
+          includeMargin={true}
         />
       </div>
       
       <p style={{ fontSize: '0.75rem', color: '#999', marginBottom: '0.5rem' }}>
         Escanea con la cámara de tu teléfono
       </p>
-      <p style={{ fontSize: '0.7rem', color: '#003087', marginBottom: '2rem', wordBreak: 'break-all', padding: '0 1rem' }}>
-        URL: {gymQrUrl}
+      <p style={{ 
+        fontSize: '0.7rem', 
+        color: '#003087', 
+        marginBottom: '2rem', 
+        wordBreak: 'break-all', 
+        padding: '0.5rem',
+        backgroundColor: '#f0f9ff',
+        borderRadius: '4px',
+        fontFamily: 'monospace'
+      }}>
+        {gymCheckinUrl}
       </p>
       
+      {/* Download QR Button */}
+      <div style={{ marginBottom: '2rem' }}>
+        <button
+          onClick={() => {
+            // Create download link for QR
+            const canvas = document.querySelector('canvas')
+            if (canvas) {
+              const url = canvas.toDataURL('image/png')
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `qr-${gymSlug}.png`
+              a.click()
+            }
+          }}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: '#fff',
+            border: '1px solid #000',
+            color: '#000',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '0.75rem'
+          }}
+        >
+          📥 Descargar QR
+        </button>
+      </div>
+      
       <div style={{ borderTop: '1px solid #e5e5e5', paddingTop: '2rem', marginTop: '1rem' }}>
-        <h4 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Códigos QR de Miembros</h4>
+        <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Códigos QR de Miembros</h4>
         <p style={{ color: '#666', fontSize: '0.75rem', marginBottom: '1.5rem' }}>
-          Cada miembro tiene un código único para acceso rápido
+          Cada miembro tiene un código único para check-in rápido
         </p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           {members.map((m) => (
-            <div key={m.id} style={{ padding: '1rem', border: '1px solid #e5e5e5', textAlign: 'center', backgroundColor: '#fafafa', borderRadius: '8px' }}>
-              <QRCodeSVG value={getMemberQrUrl(m)} size={100} />
+            <div key={m.id} style={{ 
+              padding: '1rem', 
+              border: '1px solid #e5e5e5', 
+              textAlign: 'center', 
+              backgroundColor: '#fafafa', 
+              borderRadius: '8px',
+              minWidth: '140px'
+            }}>
+              <QRCodeSVG 
+                value={getMemberCheckinUrl(m)} 
+                size={100}
+                level="M"
+              />
               <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>{m.name}</p>
-              <p style={{ fontSize: '0.7rem', color: '#999' }}>{m.qrCode}</p>
+              <p style={{ fontSize: '0.7rem', color: '#999', fontFamily: 'monospace' }}>{m.qrCode}</p>
             </div>
           ))}
         </div>
