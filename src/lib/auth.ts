@@ -1,4 +1,4 @@
-// Lightweight auth for Edge Runtime - NO Prisma, NO bcrypt
+// Auth Service - JWT + Firebase Admin
 import { SignJWT, jwtVerify } from 'jose'
 import { getDb } from './firebase-admin'
 
@@ -6,8 +6,8 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'gymflow-super-secret-key-change-in-production'
 )
 
-// Simple password hash using Web Crypto API (Edge compatible)
-async function hashPassword(password: string): Promise<string> {
+// Password hashing using Web Crypto API (Edge compatible)
+export async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder()
   const data = encoder.encode(password + 'gymflow-salt')
   const hashBuffer = await crypto.subtle.digest('SHA-256', data)
@@ -15,11 +15,12 @@ async function hashPassword(password: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   const passwordHash = await hashPassword(password)
   return passwordHash === hash
 }
 
+// JWT Token functions
 export async function generateToken(payload: { userId: string; gymId: string; role: string }): Promise<string> {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
@@ -37,7 +38,7 @@ export async function verifyToken(token: string): Promise<{ userId: string; gymI
   }
 }
 
-// Demo login - returns mock user
+// Login
 export async function login(email: string, password: string): Promise<{ user: any; token: string } | null> {
   const db = await getDb()
 
@@ -68,7 +69,7 @@ export async function login(email: string, password: string): Promise<{ user: an
     const token = await generateToken({
       userId: userDoc.id,
       gymId: userData.gymId,
-      role: userData.role
+      role: userData.role || 'member'
     })
 
     return {
@@ -76,7 +77,7 @@ export async function login(email: string, password: string): Promise<{ user: an
         id: userDoc.id,
         email: userData.email,
         name: userData.name,
-        role: userData.role,
+        role: userData.role || 'member',
         gymId: userData.gymId
       },
       token
@@ -87,12 +88,11 @@ export async function login(email: string, password: string): Promise<{ user: an
   }
 }
 
-// Demo register
+// Register
 export async function register(data: { email: string; password: string; name?: string; gymId: string; role?: string }): Promise<{ user: any; token: string }> {
   const db = await getDb()
 
   if (!db) {
-    // Demo mode
     const token = await generateToken({ userId: 'demo-user', gymId: data.gymId, role: data.role || 'member' })
     return {
       user: { id: 'demo-user', email: data.email, name: data.name, role: data.role || 'member', gymId: data.gymId },
@@ -102,52 +102,60 @@ export async function register(data: { email: string; password: string; name?: s
 
   const hashedPassword = await hashPassword(data.password)
 
-  const userRef = await db.collection('users').add({
-    email: data.email,
-    password: hashedPassword,
-    name: data.name || '',
-    gymId: data.gymId,
-    role: data.role || 'member',
-    createdAt: new Date().toISOString()
-  })
-
-  const token = await generateToken({
-    userId: userRef.id,
-    gymId: data.gymId,
-    role: data.role || 'member'
-  })
-
-  return {
-    user: {
-      id: userRef.id,
+  try {
+    const userRef = await db.collection('users').add({
       email: data.email,
-      name: data.name,
+      password: hashedPassword,
+      name: data.name || '',
+      gymId: data.gymId,
       role: data.role || 'member',
-      gymId: data.gymId
-    },
-    token
+      createdAt: new Date().toISOString()
+    })
+
+    const token = await generateToken({
+      userId: userRef.id,
+      gymId: data.gymId,
+      role: data.role || 'member'
+    })
+
+    return {
+      user: {
+        id: userRef.id,
+        email: data.email,
+        name: data.name,
+        role: data.role || 'member',
+        gymId: data.gymId
+      },
+      token
+    }
+  } catch (error) {
+    console.error('Register error:', error)
+    throw new Error('Failed to register user')
   }
 }
 
-// Setup gym
+// Setup Gym
 export async function setupGym(data: { gymName: string; slug: string; email: string; password: string; name: string }): Promise<{ user: any; token: string; gym: any }> {
   const db = await getDb()
-
   const hashedPassword = await hashPassword(data.password)
-
-  // Create gym
-  const gymData = {
-    name: data.gymName,
-    slug: data.slug,
-    plan: 'basic',
-    status: 'trial',
-    createdAt: new Date().toISOString()
-  }
 
   let gymId = 'demo-gym'
 
   if (db) {
-    const gymRef = await db.collection('gyms').add(gymData)
+    // Check if slug exists
+    const existing = await db.collection('gyms').where('slug', '==', data.slug).limit(1).get()
+    if (!existing.empty) {
+      throw new Error('Slug already in use')
+    }
+
+    // Create gym
+    const gymRef = await db.collection('gyms').add({
+      name: data.gymName,
+      slug: data.slug,
+      plan: 'basic',
+      status: 'trial',
+      createdAt: new Date().toISOString()
+    })
     gymId = gymRef.id
 
     // Create owner user
@@ -168,7 +176,13 @@ export async function setupGym(data: { gymName: string; slug: string; email: str
   })
 
   return {
-    user: { id: 'owner-' + gymId, email: data.email, name: data.name, role: 'owner', gymId },
+    user: {
+      id: 'owner-' + gymId,
+      email: data.email,
+      name: data.name,
+      role: 'owner',
+      gymId: gymId
+    },
     token,
     gym: { id: gymId, slug: data.slug, name: data.gymName }
   }
