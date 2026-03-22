@@ -1,0 +1,43 @@
+# =======================================================
+# 🧠 GYMFLOW - VARIABLES PARA VERCEL (PRODUCCIÓN)
+# =======================================================
+# Copia y pega estas variables en Vercel Dashboard > Settings > Environment Variables
+
+# =======================================================
+# APP CONFIGURATION
+# =======================================================
+NEXT_PUBLIC_APP_URL=https://gym-flow-wine.vercel.app
+
+# =======================================================
+# PAYPAL CONFIGURATION (SANDBOX)
+# =======================================================
+NEXT_PUBLIC_PAYPAL_CLIENT_ID=AUX9QydpPJkKhNysl3Eb684_st-cuKgBm5BhBFKh28EusbTb1ZS83N-TEiGa4iqM11Eg0S9V-FLLIN6K
+PAYPAL_CLIENT_SECRET=EN42ePzROGAkcTMNnJnODZdMcTPN01EnavtYU-boAg3OP-dM8cB_wOiU_XmZZQvlu2QVx8Zl4_tgGkmH
+PAYPAL_MODE=sandbox
+PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com
+
+# =======================================================
+# SECURITY
+# =======================================================
+QR_SECRET=gymflow-super-secret-qr-key-2024
+
+# =======================================================
+# FIREBASE CONFIGURATION
+# =======================================================
+FIREBASE_API_KEY=AIzaSyB4KCTV87pUqee_HeH1VBZ1buasDRI4n4o
+FIREBASE_AUTH_DOMAIN=book-a-session-d2938.firebaseapp.com
+FIREBASE_PROJECT_ID=book-a-session-d2938
+FIREBASE_STORAGE_BUCKET=book-a-session-d2938.firebasestorage.app
+FIREBASE_MESSAGING_SENDER_ID=562685317198
+FIREBASE_APP_ID=1:562685317198:web:f50340193373bbbc15731f
+FIREBASE_MEASUREMENT_ID=G-GM2Q31PEBS
+FIREBASE_DATABASE_URL=https://book-a-session-d2938-default-rtdb.firebaseio.com
+
+# Firebase Admin SDK
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@book-a-session-d2938.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCw2NFBCdiC1cJ5\nD3MYw9pYCFrrDjy1VndQW3QfK4CfdhKYFTfK3FfG5XNN6eJmk+VQ+mXdMTTpCxvN\nPC6DPZ8kwl72ehPiGd87QLMJMZLrJWHID7+u+Yse5zRGfLG5I9AhtSXo0ObqQ+l2\nrhyfGqGBT7wGk0V85vMiaYdczWNTL2G/FmWeuFa9/1E+cpStkPukJPSQm9rdpb82\nogvoa2wTVsM36//dX9j5ggs3y1FykdkrIObmWXF/lVe+N5LYFsUrmK/5hFClUCJg\nnZEbEo08iYpwgi4Xw5DTtQpQRQ3O3dbqC7zVgShiHySYbpyvcRoAyoqHcTy07XIl\nO4HEEOKTAgMBAAECggEAK2Gcf0xXgMzIDmNkVAxjSNoP135gFQm3bg5pH2ZQAI35\nxLXbwFcp7yAFF3VKtOgNxj4Oc+KovIwdj0x2ino4yk8l9Wd/7iRzlrjp0lUHWciL\nQoTefCE55+RGdg4LmMN4wHQL7x8jrg7nu9W9LqhdOvfgw2ooDxomRWhGrNSzS0m5\nBrzqkyI5Ge4oYZc1F9C+lyoJVyjVvuTqCZ5D7LhgF4EjUGR4YNCCrKm2sx5dFg2G\nrk8vpc5hv/ILnsxclbc73fczqU3LyWMwxZWornqLPwHrEQNvsSr86dh4rJTB5ZrZ\np/3w7O58BcuthwFEP90NXL3yu48+TFoP37DZFTPS4QKBgQDmDM6gZd8/QJmb4lae\nRcZGBmynPLsVJ3P5WGUZtzJBrQQphSpDb82f6z5QOldpVgPpIvalozS+/sC4C8d6\nrJXx2ibxkdshAwe/FOqKfDVowQX9sLqEYwj7O8vEYJim2c8KKixi6y9e3tht7ozb\nCLBPMymBMbvEQXdXLZrrydD58wKBgQDEy6fr8rbua3R3A5AsBU4plUUyQw05rHBC\nXkr/iWWcs/7gJyXSOSbPAgt3NG/VupCuRuQqrq9IInP9If4nL1X3DlshPoe8jqQb\nVt76vTogV2lu+PyCzWRdAK0Yuj/+LCaDpUMbiyblnzYhs252sA5INwQloaJdOD4j\nJ/Xs6b784QKBgBA5awEo7hu55Jt31QAIj7k0jskkoVUWmTlGoKq1nte+6gI7oAVt\nhyT2JEjoNG37YP86NgbsgbXOpazVN9ZRAaoy5ng2/ytO2WcChKALroCazF9d7WmU\nynddejt5TIrH5bAj1UmMqKSaNs1Z+5ke/cA4LX8tEL8AlvgRAVILw689AoGBALrt\no6yIWOCxKuhddxWJWIxBIIA0lpxgwiUYge6maOFnS8NJDDDaXpWlIJTzNwNx+jnA\nVryAPziqmTgpkMtRuDs65K74QWCGsTTS2GydT1gnD5v8X4YzaJC6srDZQS3CbDcB\nxHOmQqU8DOQIFvYgFwDbWVIRbTNU2Bj2vS9zfBmhAoGBAOGxTu2Twk+bU6quIQek\nBv1dBQV5aQVOFBKfcLQztJDAHJDS0MGMXqw4Ikoez/H/ffbPAbXBqmk3lWzSv8pQ\n4QqbuR1mRpqEI6U6jyzczslpNrIfzFiKSUubHlgEzXoL2H4Cc7+OlJQg22p9Y7gl\nUNzj4edvGZL5bBFbvAs7fxL6\n-----END PRIVATE KEY-----\n"
+
+# =======================================================
+# DATABASE
+# =======================================================
+DATABASE_URL=file:./db/gymflow.db
