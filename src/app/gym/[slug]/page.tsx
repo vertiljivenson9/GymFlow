@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -40,7 +38,7 @@ export default function GymPage() {
   const [gym, setGym] = useState<Gym | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Booking state
   const [selectedService, setSelectedService] = useState<Service | null>(null)
   const [selectedDate, setSelectedDate] = useState('')
@@ -61,7 +59,7 @@ export default function GymPage() {
       }
       const data = await res.json()
       setGym(data)
-      
+
       // Apply custom color as CSS variable
       if (data.primaryColor) {
         document.documentElement.style.setProperty('--gym-primary', data.primaryColor)
@@ -95,7 +93,7 @@ export default function GymPage() {
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
         <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Gimnasio no encontrado</h1>
         <p style={{ color: '#666', marginBottom: '2rem' }}>El gimnasio que buscas no existe o ha sido eliminado.</p>
-        <button 
+        <button
           onClick={() => router.push('/')}
           style={{ padding: '0.75rem 1.5rem', backgroundColor: '#000', color: '#fff', border: 'none', cursor: 'pointer' }}
         >
@@ -119,12 +117,12 @@ export default function GymPage() {
               <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: primaryColor }}>{gym.name}</h1>
             )}
           </div>
-          <button 
+          <button
             onClick={() => setBookingStep(1)}
-            style={{ 
-              padding: '0.75rem 1.5rem', 
-              backgroundColor: primaryColor, 
-              color: '#fff', 
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: primaryColor,
+              color: '#fff',
               border: 'none',
               cursor: 'pointer',
               fontFamily: 'var(--font-display)',
@@ -140,9 +138,9 @@ export default function GymPage() {
       </header>
 
       {/* HERO */}
-      <section style={{ 
-        padding: '4rem 1rem', 
-        textAlign: 'center', 
+      <section style={{
+        padding: '4rem 1rem',
+        textAlign: 'center',
         backgroundColor: primaryColor,
         color: '#fff',
       }}>
@@ -164,11 +162,11 @@ export default function GymPage() {
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>Nuestros Servicios</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
               {gym.services.map((service) => (
-                <div 
-                  key={service.id} 
-                  style={{ 
-                    padding: '1.5rem', 
-                    backgroundColor: '#fff', 
+                <div
+                  key={service.id}
+                  style={{
+                    padding: '1.5rem',
+                    backgroundColor: '#fff',
                     border: '1px solid #d4d4d4',
                     cursor: 'pointer',
                     transition: 'border-color 150ms',
@@ -191,30 +189,30 @@ export default function GymPage() {
       {selectedService && bookingStep === 2 && (
         <section style={{ padding: '3rem 1rem', backgroundColor: '#f5f5f5' }}>
           <div style={{ maxWidth: '500px', margin: '0 auto' }}>
-            <button 
+            <button
               onClick={() => { setSelectedService(null); setBookingStep(1); }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', marginBottom: '1rem', padding: 0 }}
             >
               ← Volver a servicios
             </button>
-            
+
             <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{selectedService.name}</h2>
             <p style={{ color: '#666', marginBottom: '2rem' }}>${selectedService.price} - {selectedService.duration} min</p>
-            
+
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Fecha</label>
-              <input 
-                type="date" 
+              <input
+                type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
                 style={{ width: '100%', padding: '0.75rem', border: '1px solid #d4d4d4', fontSize: '1rem' }}
               />
             </div>
-            
+
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Hora</label>
-              <select 
+              <select
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
                 style={{ width: '100%', padding: '0.75rem', border: '1px solid #d4d4d4', fontSize: '1rem' }}
@@ -225,15 +223,15 @@ export default function GymPage() {
                 ))}
               </select>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => setBookingStep(3)}
               disabled={!selectedDate || !selectedTime}
-              style={{ 
+              style={{
                 width: '100%',
-                padding: '1rem', 
+                padding: '1rem',
                 backgroundColor: selectedDate && selectedTime ? primaryColor : '#d4d4d4',
-                color: '#fff', 
+                color: '#fff',
                 border: 'none',
                 cursor: selectedDate && selectedTime ? 'pointer' : 'not-allowed',
                 fontSize: '1rem',
@@ -250,56 +248,56 @@ export default function GymPage() {
       {bookingStep === 3 && (
         <section style={{ padding: '3rem 1rem', backgroundColor: '#f5f5f5' }}>
           <div style={{ maxWidth: '400px', margin: '0 auto' }}>
-            <button 
+            <button
               onClick={() => setBookingStep(2)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', marginBottom: '1rem', padding: 0 }}
             >
               ← Volver
             </button>
-            
+
             <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Tus Datos</h2>
             <p style={{ color: '#666', marginBottom: '2rem' }}>
               {selectedService?.name} - {selectedDate} a las {selectedTime}
             </p>
-            
+
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Nombre</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={clientInfo.name}
                 onChange={(e) => setClientInfo({ ...clientInfo, name: e.target.value })}
                 style={{ width: '100%', padding: '0.75rem', border: '1px solid #d4d4d4', fontSize: '1rem' }}
               />
             </div>
-            
+
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Email</label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 value={clientInfo.email}
                 onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
                 style={{ width: '100%', padding: '0.75rem', border: '1px solid #d4d4d4', fontSize: '1rem' }}
               />
             </div>
-            
+
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Teléfono</label>
-              <input 
-                type="tel" 
+              <input
+                type="tel"
                 value={clientInfo.phone}
                 onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })}
                 style={{ width: '100%', padding: '0.75rem', border: '1px solid #d4d4d4', fontSize: '1rem' }}
               />
             </div>
-            
-            <button 
+
+            <button
               onClick={handleBooking}
               disabled={!clientInfo.name || !clientInfo.email}
-              style={{ 
+              style={{
                 width: '100%',
-                padding: '1rem', 
+                padding: '1rem',
                 backgroundColor: clientInfo.name && clientInfo.email ? primaryColor : '#d4d4d4',
-                color: '#fff', 
+                color: '#fff',
                 border: 'none',
                 cursor: clientInfo.name && clientInfo.email ? 'pointer' : 'not-allowed',
                 fontSize: '1rem',
@@ -320,10 +318,10 @@ export default function GymPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
               {gym.trainers.map((trainer) => (
                 <div key={trainer.id} style={{ textAlign: 'center' }}>
-                  <div style={{ 
-                    width: '120px', 
-                    height: '120px', 
-                    borderRadius: '50%', 
+                  <div style={{
+                    width: '120px',
+                    height: '120px',
+                    borderRadius: '50%',
                     margin: '0 auto 1rem',
                     backgroundColor: '#f5f5f5',
                     overflow: 'hidden',
