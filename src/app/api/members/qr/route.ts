@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/firebase-admin'
 
@@ -16,7 +14,6 @@ export async function GET(req: NextRequest) {
     const db = await getDb()
 
     if (!db) {
-      // Demo mode
       return NextResponse.json({
         valid: true,
         member: {
@@ -32,7 +29,6 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    // Find member by QR code
     const snapshot = await db.collection('members')
       .where('qrCode', '==', qrCode)
       .where('gymId', '==', gymId)
@@ -49,7 +45,6 @@ export async function GET(req: NextRequest) {
     const memberDoc = snapshot.docs[0]
     const memberData = memberDoc.data()
 
-    // Check membership status
     const membershipSnapshot = await db.collection('memberships')
       .where('memberId', '==', memberDoc.id)
       .where('status', '==', 'active')

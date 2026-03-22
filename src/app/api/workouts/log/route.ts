@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/firebase-admin'
 
@@ -15,7 +13,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (dayIndex !== undefined) {
-      // Complete workout day
       await db.collection('workout_logs').add({
         memberId,
         dayIndex,
@@ -25,7 +22,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
-    // Log exercise
     await db.collection('exercise_logs').add({
       memberId,
       workoutExerciseId,

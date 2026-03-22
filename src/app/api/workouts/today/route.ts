@@ -1,22 +1,30 @@
-export const runtime = 'edge';
-
 import { NextRequest, NextResponse } from 'next/server'
-import { withAuth, badRequest } from '@/lib/edge-middleware'
+import { verifyToken } from '@/lib/edge-auth'
 import { getDb } from '@/lib/firebase-admin'
 
-export const GET = withAuth(async (req) => {
+export async function GET(req: NextRequest) {
   try {
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const token = authHeader.slice(7)
+    const payload = await verifyToken(token)
+    if (!payload) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(req.url)
     const memberId = searchParams.get('memberId')
 
     if (!memberId) {
-      return badRequest('Missing memberId parameter')
+      return NextResponse.json({ error: 'Missing memberId parameter' }, { status: 400 })
     }
 
     const db = await getDb()
 
     if (!db) {
-      // Demo mode
       return NextResponse.json({
         id: 'demo-workout',
         dayIndex: 0,
@@ -29,7 +37,6 @@ export const GET = withAuth(async (req) => {
       })
     }
 
-    // Get today's workout
     const today = new Date().toISOString().split('T')[0]
     const snapshot = await db.collection('workouts')
       .where('memberId', '==', memberId)
@@ -50,4 +57,4 @@ export const GET = withAuth(async (req) => {
     console.error('Get workout error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-})
+}

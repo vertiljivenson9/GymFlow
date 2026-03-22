@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/firebase-admin'
 
@@ -7,7 +5,6 @@ export async function POST(request: Request) {
   try {
     const db = await getDb()
 
-    // Demo mode if Firebase Admin not configured
     if (!db) {
       return NextResponse.json({
         success: true,
@@ -55,7 +52,6 @@ export async function POST(request: Request) {
 export async function GET() {
   const db = await getDb()
 
-  // Demo mode if Firebase Admin not configured
   if (!db) {
     return NextResponse.json({
       success: true,

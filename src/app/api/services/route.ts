@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/firebase-admin'
 
@@ -7,7 +5,7 @@ const DEFAULT_SERVICES = [
   {
     id: 'pt-001',
     name: 'Personal Training',
-    description: 'One-on-one session with a certified trainer. Customized workout plan tailored to your goals.',
+    description: 'One-on-one session with a certified trainer.',
     duration: 60,
     price: 75,
     category: 'training',
@@ -16,7 +14,7 @@ const DEFAULT_SERVICES = [
   {
     id: 'gc-001',
     name: 'Group Strength',
-    description: 'High-energy group workout focusing on strength and conditioning. All fitness levels welcome.',
+    description: 'High-energy group workout.',
     duration: 45,
     price: 25,
     category: 'class',
@@ -24,8 +22,8 @@ const DEFAULT_SERVICES = [
   },
   {
     id: 'yw-001',
-    name: 'Sunrise Yoga',
-    description: 'Start your day with a peaceful yoga session overlooking the Caribbean. Mats provided.',
+    name: 'Yoga',
+    description: 'Peaceful yoga session.',
     duration: 60,
     price: 20,
     category: 'wellness',
@@ -34,7 +32,7 @@ const DEFAULT_SERVICES = [
   {
     id: 'mt-001',
     name: 'Sports Massage',
-    description: 'Deep tissue massage for recovery and relaxation. Perfect after an intense workout.',
+    description: 'Deep tissue massage for recovery.',
     duration: 60,
     price: 90,
     category: 'wellness',
@@ -45,7 +43,6 @@ const DEFAULT_SERVICES = [
 export async function GET() {
   const db = await getDb()
 
-  // Demo mode - sin Firebase
   if (!db) {
     return NextResponse.json({ success: true, demo: true, data: DEFAULT_SERVICES })
   }

@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/firebase-admin'
 
@@ -65,7 +63,6 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // List all gyms
     const snapshot = await db.collection('gyms').orderBy('createdAt', 'desc').limit(50).get()
     const gyms = snapshot.docs.map(doc => ({
       id: doc.id,
@@ -100,7 +97,6 @@ export async function POST(request: NextRequest) {
       }, { status: 201 })
     }
 
-    // Check if slug exists
     const existing = await db.collection('gyms').where('slug', '==', slug).limit(1).get()
     if (!existing.empty) {
       return NextResponse.json({ error: 'Slug already in use' }, { status: 400 })
