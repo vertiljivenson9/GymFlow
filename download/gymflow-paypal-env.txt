@@ -1,0 +1,13 @@
+# =========================================
+# GymFlow - PayPal Credentials
+# =========================================
+# Add these to your Vercel Environment Variables
+
+# PayPal Client ID (Public - safe to expose)
+NEXT_PUBLIC_PAYPAL_CLIENT_ID=AUX9QydpPJkKhNysl3Eb684_st-cuKgBm5BhBFKh28EusbTb1ZS83N-TEiGa4iqM11Eg0S9V-FLLIN6K
+
+# PayPal Secret (Private - NEVER expose to client)
+PAYPAL_CLIENT_SECRET=EN42ePzROGAkcTMNnJnODZdMcTPN01EnavtYU-boAg3OP-dM8cB_wOiU_XmZZQvlu2QVx8Zl4_tgGkmH
+
+# PayPal Mode (sandbox or live)
+PAYPAL_MODE=sandbox

@@ -6,7 +6,7 @@ import { QRCodeSVG } from 'qrcode.react'
 // ============================================
 // TYPES
 // ============================================
-type View = 'landing' | 'login' | 'register' | 'setup' | 'dashboard' | 'trainer' | 'member-qr' | 'member-workout' | 'template-editor'
+type View = 'landing' | 'login' | 'register' | 'setup' | 'dashboard' | 'trainer' | 'member-qr' | 'member-workout' | 'template-editor' | 'subscription'
 type Role = 'owner' | 'trainer' | 'member'
 
 interface User {
