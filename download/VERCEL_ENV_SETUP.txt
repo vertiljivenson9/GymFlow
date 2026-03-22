@@ -1,0 +1,102 @@
+# =======================================================
+# GYMFLOW - Variables de Entorno para Vercel
+# =======================================================
+
+INSTRUCCIONES PARA CONFIGURAR LAS VARIABLES DE ENTORNO EN VERCEL:
+
+1. Ve a tu proyecto en Vercel: https://vercel.com/dashboard
+2. Selecciona el proyecto "gym-flow" (o el nombre que tenga)
+3. Ve a Settings → Environment Variables
+4. Agrega las siguientes variables:
+
+# =======================================================
+# VARIABLES REQUERIDAS (YA CONFIGURADAS)
+# =======================================================
+
+NEXT_PUBLIC_APP_URL
+Valor: https://gym-flow-wine.vercel.app
+Entorno: Production, Preview, Development
+
+NEXT_PUBLIC_PAYPAL_CLIENT_ID
+Valor: (Tu PayPal Client ID - ya configurado)
+Entorno: Production, Preview, Development
+
+PAYPAL_CLIENT_SECRET
+Valor: (Tu PayPal Client Secret - ya configurado)
+Entorno: Production, Preview, Development
+
+FIREBASE_PROJECT_ID
+Valor: (Tu Firebase Project ID - ya configurado)
+Entorno: Production, Preview, Development
+
+FIREBASE_CLIENT_EMAIL
+Valor: (Tu Firebase Client Email - ya configurado)
+Entorno: Production, Preview, Development
+
+FIREBASE_PRIVATE_KEY
+Valor: (Tu Firebase Private Key - ya configurado)
+Entorno: Production, Preview, Development
+
+# =======================================================
+# VARIABLES RECOMENDADAS (AGREGAR)
+# =======================================================
+
+QR_SECRET
+Valor: (Genera un secret aleatorio seguro, ej: un UUID o string aleatorio de 32+ caracteres)
+Ejemplo: gymflow-qr-secret-2024-a1b2c3d4e5f6g7h8
+Entorno: Production, Preview, Development
+NOTA: Si no se configura, el sistema usa un fallback basado en APP_URL
+
+PAYPAL_MODE
+Valor: sandbox (para pruebas) o live (para producción)
+Entorno: Production: live | Preview/Development: sandbox
+NOTA: Si no se configura, default es 'sandbox'
+
+# =======================================================
+# CÓMO GENERAR QR_SECRET
+# =======================================================
+
+Opción 1 - Usando Node.js:
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+Opción 2 - Usando OpenSSL:
+openssl rand -hex 32
+
+Opción 3 - Online:
+Genera un UUID v4 y úsalo como secret
+
+# =======================================================
+# COMANDOS VERCEL CLI (si tienes acceso)
+# =======================================================
+
+# Agregar variable:
+vercel env add QR_SECRET --project-id prj_gjhCbXS58KLvnT3uG0b2jtbop2Uy
+
+# Listar variables:
+vercel env ls --project-id prj_gjhCbXS58KLvnT3uG0b2jtbop2Uy
+
+# Eliminar variable:
+vercel env rm QR_SECRET --project-id prj_gjhCbXS58KLvnT3uG0b2jtbop2Uy
+
+# =======================================================
+# NOTAS IMPORTANTES
+# =======================================================
+
+1. NUNCA expongas PAYPAL_CLIENT_SECRET o FIREBASE_PRIVATE_KEY en el frontend
+2. Las variables con prefijo NEXT_PUBLIC_ son visibles en el navegador
+3. Reinicia el deploy después de agregar variables nuevas
+4. Para PayPal en modo live, asegúrate de usar las credenciales de producción
+
+# =======================================================
+# VERIFICACIÓN
+# =======================================================
+
+Después de configurar las variables, verifica:
+
+1. El QR de check-in funciona en /g/[slug]/checkin
+2. Los botones de PayPal cargan correctamente
+3. Los pagos se procesan y se registran en Firestore
+
+Para probar:
+- Visita: https://gym-flow-wine.vercel.app/g/demo-gym/checkin
+- El QR debería mostrar un token con formato: gymId.timestamp.signature

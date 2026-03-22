@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
+import { PayPalCheckout } from '@/components/PayPalCheckout'
 
 // ============================================
 // TYPES

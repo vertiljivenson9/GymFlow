@@ -4,8 +4,25 @@
 
 import crypto from 'crypto'
 
-// Token expiration time (30 seconds)
-const TOKEN_EXPIRATION_MS = 30000
+// Token expiration time (30 seconds for gym QR, 5 min for member QR)
+const GYM_TOKEN_EXPIRATION_MS = 30000
+const MEMBER_TOKEN_EXPIRATION_MS = 5 * 60 * 1000
+
+/**
+ * Get QR secret - uses environment variable or generates a stable fallback
+ * IMPORTANT: In production, always set QR_SECRET environment variable
+ */
+function getQRSecret(): string {
+  // Priority: env variable > stable generated secret
+  if (process.env.QR_SECRET) {
+    return process.env.QR_SECRET
+  }
+
+  // Fallback: generate stable secret from app URL (consistent across deployments)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gym-flow-wine.vercel.app'
+  // Create a stable hash from the app URL
+  return crypto.createHash('sha256').update(appUrl).digest('hex')
+}
 
 /**
  * Generate a secure QR token for a gym
@@ -71,7 +88,7 @@ export function verifyQRToken(token: string): {
     }
     
     // Check if token expired
-    if (Date.now() - timestamp > TOKEN_EXPIRATION_MS) {
+    if (Date.now() - timestamp > GYM_TOKEN_EXPIRATION_MS) {
       return { valid: false, reason: 'EXPIRED' }
     }
     
@@ -135,14 +152,6 @@ export function verifyMemberQRToken(
     console.error('[QR] Member verification error:', error)
     return { valid: false, reason: 'VERIFICATION_ERROR' }
   }
-}
-
-/**
- * Get QR secret from environment
- */
-function getQRSecret(): string {
-  const secret = process.env.QR_SECRET || process.env.NEXT_PUBLIC_APP_URL || 'gymflow-default-secret-key'
-  return secret
 }
 
 /**

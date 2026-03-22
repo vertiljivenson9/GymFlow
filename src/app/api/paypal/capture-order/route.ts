@@ -3,16 +3,17 @@ import { capturePayPalOrder } from '@/lib/paypal-api'
 import { 
   paymentsCollection, 
   subscriptionsCollection, 
-  plansCollection 
+  plansCollection,
+  membersCollection
 } from '@/lib/db'
 import { calculatePeriodEnd } from '@/lib/subscription'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { orderId, userId, gymId, planId } = body
+    const { orderId, userId, gymId, planId, memberId } = body
 
-    console.log('[PayPal] Capture order request:', { orderId, userId, gymId, planId })
+    console.log('[PayPal] Capture order request:', { orderId, userId, gymId, planId, memberId })
 
     if (!orderId) {
       return NextResponse.json(
@@ -46,12 +47,13 @@ export async function POST(req: NextRequest) {
         capturedAt: new Date(),
         amount: paymentAmount,
         currency: paymentCurrency,
+        userId: userId || 'unknown',
       })
     } catch (dbError) {
       console.error('[PayPal] Failed to update payment:', dbError)
     }
 
-    // Create subscription if plan info provided
+    // Create subscription if plan info provided (SaaS subscription for gym owners)
     if (userId && gymId && planId) {
       try {
         const plan = await plansCollection.find(planId)
@@ -71,6 +73,23 @@ export async function POST(req: NextRequest) {
 
       } catch (subError) {
         console.error('[PayPal] Failed to create subscription:', subError)
+      }
+    }
+
+    // Update member membership if this is a gym membership payment
+    if (memberId && gymId) {
+      try {
+        const membershipEnd = new Date()
+        membershipEnd.setMonth(membershipEnd.getMonth() + 1)
+
+        await membersCollection.update(memberId, {
+          membershipStatus: 'active',
+          membershipEndsAt: membershipEnd.getTime(),
+        })
+
+        console.log('[PayPal] Member membership updated:', memberId)
+      } catch (memberError) {
+        console.error('[PayPal] Failed to update member:', memberError)
       }
     }
 

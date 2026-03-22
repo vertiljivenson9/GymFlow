@@ -1,11 +1,13 @@
 // PayPal SDK utilities - Extended for SaaS + Gym Owner Payments
 export const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || ''
 export const PAYPAL_SECRET = process.env.PAYPAL_CLIENT_SECRET || ''
-export const PAYPAL_MODE = process.env.PAYPAL_MODE || 'sandbox'
+export const PAYPAL_MODE = (process.env.PAYPAL_MODE || 'sandbox').toLowerCase()
 
 export const PAYPAL_API_BASE = PAYPAL_MODE === 'live'
   ? 'https://api-m.paypal.com'
   : 'https://api-m.sandbox.paypal.com'
+
+console.log('[PayPal] Initialized:', { mode: PAYPAL_MODE, baseUrl: PAYPAL_API_BASE })
 
 // ============================================
 // AUTHENTICATION
