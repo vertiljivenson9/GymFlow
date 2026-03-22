@@ -316,7 +316,7 @@ export default function GymFlowApp() {
               <img src={gym.logo} alt={gym.name} style={{ height: '40px' }} />
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <img src="/logo.svg" alt="GymFlow" style={{ height: '36px' }} />
+                <img src="/logo.png" alt="GymFlow" style={{ height: '36px' }} />
                 {gym?.name && <span style={{ fontWeight: 700, fontSize: '1.125rem' }}>{gym.name}</span>}
               </div>
             )}
