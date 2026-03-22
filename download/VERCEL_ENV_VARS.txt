@@ -1,0 +1,52 @@
+# =========================================
+# GymFlow - Vercel Environment Variables
+# =========================================
+# Add these to Vercel: Settings > Environment Variables
+
+# Firebase Client (Public - NEXT_PUBLIC prefix makes them client-side accessible)
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyB4KCTV87pUqee_HeH1VBZ1buasDRI4n4o
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=book-a-session-d2938.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=book-a-session-d2938
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=book-a-session-d2938.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=562685317198
+NEXT_PUBLIC_FIREBASE_APP_ID=1:562685317198:web:f50340193373bbbc15731f
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-GM2Q31PEBS
+
+# Firebase Admin SDK (Private - Server-side only)
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@book-a-session-d2938.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCw2NFBCdiC1cJ5
+D3MYw9pYCFrrDjy1VndQW3QfK4CfdhKYFTfK3FfG5XNN6eJmk+VQ+mXdMTTpCxvN
+PC6DPZ8kwl72ehPiGd87QLMJMZLrJWHID7+u+Yse5zRGfLG5I9AhtSXo0ObqQ+l2
+rhyfGqGBT7wGk0V85vMiaYdczWNTL2G/FmWeuFa9/1E+cpStkPukJPSQm9rdpb82
+ogvoa2wTVsM36//dX9j5ggs3y1FykdkrIObmWXF/lVe+N5LYFsUrmK/5hFClUCJg
+nZEbEo08iYpwgi4Xw5DTtQpQRQ3O3dbqC7zVgShiHySYbpyvcRoAyoqHcTy07XIl
+O4HEEOKTAgMBAAECggEAK2Gcf0xXgMzIDmNkVAxjSNoP135gFQm3bg5pH2ZQAI35
+xLXbwFcp7yAFF3VKtOgNxj4Oc+KovIwdj0x2ino4yk8l9Wd/7iRzlrjp0lUHWciL
+QoTefCE55+RGdg4LmMN4wHQL7x8jrg7nu9W9LqhdOvfgw2ooDxomRWhGrNSzS0m5
+BrzqkyI5Ge4oYZc1F9C+lyoJVyjVvuTqCZ5D7LhgF4EjUGR4YNCCrKm2sx5dFg2G
+rk8vpc5hv/ILnsxclbc73fczqU3LyWMwxZWornqLPwHrEQNvsSr86dh4rJTB5ZrZ
+p/3w7O58BcuthwFEP90NXL3yu48+TFoP37DZFTPS4QKBgQDmDM6gZd8/QJmb4lae
+RcZGBmynPLsVJ3P5WGUZtzJBrQQphSpDb82f6z5QOldpVgPpIvalozS+/sC4C8d6
+rJXx2ibxkdshAwe/FOqKfDVowQX9sLqEYwj7O8vEYJim2c8KKixi6y9e3tht7ozb
+CLBPMymBMbvEQXdXLZrrydD58wKBgQDEy6fr8rbua3R3A5AsBU4plUUyQw05rHBC
+Xkr/iWWcs/7gJyXSOSbPAgt3NG/VupCuRuQqrq9IInP9If4nL1X3DlshPoe8jqQb
+Vt76vTogV2lu+PyCzWRdAK0Yuj/+LCaDpUMbiyblnzYhs252sA5INwQloaJdOD4j
+J/Xs6b784QKBgBA5awEo7hu55Jt31QAIj7k0jskkoVUWmTlGoKq1nte+6gI7oAVt
+hyT2JEjoNG37YP86NgbsgbXOpazVN9ZRAaoy5ng2/ytO2WcChKALroCazF9d7WmU
+ynddejt5TIrH5bAj1UmMqKSaNs1Z+5ke/cA4LX8tEL8AlvgRAVILw689AoGBALrt
+o6yIWOCxKuhddxWJWIxBIIA0lpxgwiUYge6maOFnS8NJDDDaXpWlIJTzNwNx+jnA
+VryAPziqmTgpkMtRuDs65K74QWCGsTTS2GydT1gnD5v8X4YzaJC6srDZQS3CbDcB
+xHOmQqU8DOQIFvYgFwDbWVIRbTNU2Bj2vS9zfBmhAoGBAOGxTu2Twk+bU6quIQek
+Bv1dBQV5aQVOFBKfcLQztJDAHJDS0MGMXqw4Ikoez/H/ffbPAbXBqmk3lWzSv8pQ
+4QqbuR1mRpqEI6U6jyzczslpNrIfzFiKSUubHlgEzXoL2H4Cc7+OlJQg22p9Y7gl
+UNzj4edvGZL5bBFbvAs7fxL6
+-----END PRIVATE KEY-----
+
+# JWT Secret
+JWT_SECRET=gymflow-production-jwt-secret-key-2024
+
+# PayPal (Public Client ID + Private Secret)
+NEXT_PUBLIC_PAYPAL_CLIENT_ID=AUX9QydpPJkKhNysl3Eb684_st-cuKgBm5BhBFKh28EusbTb1ZS83N-TEiGa4iqM11Eg0S9V-FLLIN6K
+PAYPAL_CLIENT_SECRET=EN42ePzROGAkcTMNnJnODZdMcTPN01EnavtYU-boAg3OP-dM8cB_wOiU_XmZZQvlu2QVx8Zl4_tgGkmH
+PAYPAL_MODE=sandbox
