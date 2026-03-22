@@ -1,0 +1,94 @@
+:root {
+  /* Colors - Brutalist minimal palette */
+  --color-black: #0a0a0a;
+  --color-white: #fafafa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #e5e5e5;
+  --color-gray-300: #d4d4d4;
+  --color-gray-400: #a3a3a3;
+  --color-gray-500: #737373;
+  --color-gray-600: #525252;
+  --color-gray-700: #404040;
+  --color-gray-800: #262626;
+  --color-gray-900: #171717;
+  
+  /* Accent - Warm terracotta for wellness feel */
+  --color-accent: #c45d3e;
+  --color-accent-hover: #a84d32;
+  --color-accent-light: #f5e6e0;
+  
+  /* Semantic */
+  --color-success: #2d7d46;
+  --color-error: #c44d4d;
+  --color-warning: #b8860b;
+  
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  
+  /* Font sizes - 8px based scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+  --text-4xl: 2.5rem;
+  --text-5xl: 3.5rem;
+  
+  /* Font weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  /* Line heights */
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+  
+  /* Spacing - 8px system */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  
+  /* Layout */
+  --max-width: 1200px;
+  --content-width: 680px;
+  
+  /* Borders */
+  --border-width: 1px;
+  --border-color: var(--color-gray-300);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-white: #0a0a0a;
+    --color-black: #fafafa;
+    --color-gray-100: #171717;
+    --color-gray-200: #262626;
+    --color-gray-300: #404040;
+    --color-gray-400: #525252;
+    --color-gray-500: #737373;
+    --color-gray-600: #a3a3a3;
+    --color-gray-700: #d4d4d4;
+    --color-gray-800: #e5e5e5;
+    --color-gray-900: #f5f5f5;
+    --border-color: var(--color-gray-300);
+    --color-accent-light: #3d2520;
+  }
+}

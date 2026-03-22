@@ -1,0 +1,391 @@
+// GymFlow SaaS - Production-Ready Multi-Tenant Schema
+// Compatible with SQLite (dev) and PostgreSQL (prod)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// CORE MULTI-TENANT
+// ============================================
+
+model Gym {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  logo         String?
+  primaryColor String   @default("#000000")
+  phone        String?
+  address      String?
+  description  String?
+  
+  // Subscription
+  plan         String   @default("basic")  // basic, pro, enterprise
+  status       String   @default("trial")  // trial, active, suspended, cancelled
+  
+  // Relations
+  users        User[]
+  plans        Plan[]
+  members      Member[]
+  exercises    Exercise[]
+  templates    Template[]
+  rules        PlanTemplateRule[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ============================================
+// AUTH & USERS
+// ============================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Hashed
+  name      String?
+  role      String   @default("member")  // owner, trainer, staff, member
+  phone     String?
+  active    Boolean  @default(true)
+  
+  // Multi-tenant
+  gymId     String
+  gym       Gym      @relation(fields: [gymId], references: [id])
+  
+  // If user is a member
+  member    Member?
+  
+  // Sessions
+  sessions  Session[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  
+  createdAt DateTime @default(now())
+}
+
+// ============================================
+// MEMBERSHIP SYSTEM
+// ============================================
+
+model Plan {
+  id          String   @id @default(cuid())
+  name        String   // e.g., "Basic", "Premium", "Elite"
+  level       String   @default("beginner")  // beginner, intermediate, advanced
+  price       Float
+  duration    Int      // in days
+  features    String?  // JSON string of features
+  active      Boolean  @default(true)
+  
+  gymId       String
+  gym         Gym      @relation(fields: [gymId], references: [id])
+  
+  memberships Membership[]
+  rules       PlanTemplateRule[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Member {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String?
+  email        String?
+  qrCode       String   @unique  // QR identifier
+  level        String   @default("beginner")  // beginner, intermediate, advanced
+  
+  // Multi-tenant
+  gymId        String
+  gym          Gym      @relation(fields: [gymId], references: [id])
+  
+  // User link (optional - for staff accounts)
+  userId       String?  @unique
+  user         User?    @relation(fields: [userId], references: [id])
+  
+  // Membership
+  memberships  Membership[]
+  
+  // Training
+  userState    UserState?
+  workouts     Workout[]
+  workoutLogs  WorkoutLog[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Membership {
+  id         String   @id @default(cuid())
+  status     String   @default("active")  // active, expired, cancelled, frozen
+  startsAt   DateTime
+  expiresAt  DateTime
+  
+  memberId   String
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  planId     String
+  plan       Plan     @relation(fields: [planId], references: [id])
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ============================================
+// TRAINING ENGINE - EXERCISES
+// ============================================
+
+model Exercise {
+  id             String   @id @default(cuid())
+  name           String
+  type           String   // push, pull, legs, core, cardio, mobility
+  difficulty     Int      @default(1)  // 1-5
+  fatigueImpact  Int      @default(5)  // 1-10
+  skillRequired  Int      @default(1)  // 1-5
+  equipment      String?  // barbell, dumbbell, cable, bodyweight, etc.
+  muscleGroups   String?  // JSON array: ["chest", "triceps", "shoulders"]
+  instructions   String?
+  active         Boolean  @default(true)
+  
+  gymId          String
+  gym            Gym      @relation(fields: [gymId], references: [id])
+  
+  // Used in
+  workoutExercises WorkoutExercise[]
+  workoutLogs      WorkoutLog[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ============================================
+// TRAINING ENGINE - TEMPLATES
+// ============================================
+
+model Template {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  level       String   @default("beginner")  // beginner, intermediate, advanced
+  goal        String?  // strength, hypertrophy, endurance, general
+  daysPerWeek Int      @default(3)
+  active      Boolean  @default(true)
+  
+  gymId       String
+  gym         Gym      @relation(fields: [gymId], references: [id])
+  
+  days        TemplateDay[]
+  rules       PlanTemplateRule[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TemplateDay {
+  id          String   @id @default(cuid())
+  dayIndex    Int      // 0 = Monday, 1 = Tuesday, etc.
+  name        String?  // "Push Day", "Pull Day", etc.
+  restDay     Boolean  @default(false)
+  
+  templateId  String
+  template    Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  
+  blocks      TemplateBlock[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TemplateBlock {
+  id            String   @id @default(cuid())
+  blockType     String   // push, pull, legs, core, cardio, mobility
+  blockOrder    Int      // Order within the day
+  sets          Int      @default(3)
+  reps          String   @default("8-12")  // Can be "8-12", "5x5", "AMRAP", etc.
+  restSeconds   Int      @default(90)
+  notes         String?
+  
+  templateDayId String
+  templateDay   TemplateDay @relation(fields: [templateDayId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ============================================
+// TRAINING ENGINE - RULES
+// ============================================
+
+model PlanTemplateRule {
+  id         String   @id @default(cuid())
+  level      String   // beginner, intermediate, advanced
+  
+  gymId      String
+  gym        Gym      @relation(fields: [gymId], references: [id])
+  
+  planId     String?
+  plan       Plan?    @relation(fields: [planId], references: [id])
+  
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id])
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ============================================
+// TRAINING ENGINE - WORKOUTS (GENERATED)
+// ============================================
+
+model Workout {
+  id           String   @id @default(cuid())
+  weekStart    DateTime // Monday of the week
+  status       String   @default("active")  // active, completed, cancelled
+  phase        String   @default("adaptation")  // adaptation, progression, deload
+  
+  memberId     String
+  member       Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  days         WorkoutDay[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@unique([memberId, weekStart])
+}
+
+model WorkoutDay {
+  id          String   @id @default(cuid())
+  dayIndex    Int      // 0-6 (Monday-Sunday)
+  name        String?
+  restDay     Boolean  @default(false)
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  
+  workoutId   String
+  workout     Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  
+  exercises   WorkoutExercise[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([workoutId, dayIndex])
+}
+
+model WorkoutExercise {
+  id              String   @id @default(cuid())
+  sets            Int
+  reps            String
+  weight          Float    @default(0)
+  restSeconds     Int      @default(90)
+  notes           String?
+  order           Int      // Order in the workout
+  
+  workoutDayId    String
+  workoutDay      WorkoutDay @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+  
+  exerciseId      String
+  exercise        Exercise @relation(fields: [exerciseId], references: [id])
+  
+  logs            WorkoutExerciseLog[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([workoutDayId, order])
+}
+
+// ============================================
+// TRACKING SYSTEM
+// ============================================
+
+model WorkoutLog {
+  id              String   @id @default(cuid())
+  date            DateTime @default(now())
+  
+  memberId        String
+  member          Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  exerciseId      String?
+  exercise        Exercise? @relation(fields: [exerciseId], references: [id])
+  
+  // Summary
+  totalSets       Int      @default(0)
+  completedSets   Int      @default(0)
+  totalVolume     Float    @default(0)  // sets * reps * weight
+  
+  // Feedback
+  difficulty      Int?     // 1-10 RPE
+  notes           String?
+  
+  exerciseLogs    WorkoutExerciseLog[]
+  
+  createdAt       DateTime @default(now())
+}
+
+model WorkoutExerciseLog {
+  id                String   @id @default(cuid())
+  setNumber         Int
+  repsCompleted     Int
+  weight            Float
+  completed         Boolean  @default(false)
+  notes             String?
+  
+  workoutLogId      String
+  workoutLog        WorkoutLog @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  
+  workoutExerciseId String?
+  workoutExercise   WorkoutExercise? @relation(fields: [workoutExerciseId], references: [id])
+  
+  createdAt         DateTime @default(now())
+}
+
+// ============================================
+// ELITE ENGINE - USER STATE
+// ============================================
+
+model UserState {
+  id                  String   @id @default(cuid())
+  
+  // Scores (0-100)
+  fatigueScore        Int      @default(0)
+  consistencyScore    Int      @default(50)
+  performanceScore    Int      @default(50)
+  
+  // Phase
+  currentPhase        String   @default("adaptation")  // adaptation, progression, deload
+  phaseStartedAt      DateTime @default(now())
+  
+  // Streaks
+  currentStreak       Int      @default(0)
+  longestStreak       Int      @default(0)
+  lastWorkoutAt       DateTime?
+  
+  // Weekly stats
+  workoutsThisWeek    Int      @default(0)
+  workoutsLastWeek    Int      @default(0)
+  
+  // Level progression
+  level               String   @default("beginner")
+  levelProgress       Int      @default(0)  // 0-100 to next level
+  weeksAtCurrentLevel Int      @default(0)
+  
+  memberId            String   @unique
+  member              Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
