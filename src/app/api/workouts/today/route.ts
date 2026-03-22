@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/edge-auth'
+import { verifyToken } from '@/lib/auth'
 import { getDb } from '@/lib/firebase-admin'
 
 export async function GET(req: NextRequest) {

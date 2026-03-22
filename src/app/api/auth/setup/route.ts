@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { setupGym } from '@/lib/edge-auth'
+import { setupGym } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
   try {
