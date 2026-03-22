@@ -1,20 +1,26 @@
+// =======================================================
+// 📁 API: CAPTURE PAYPAL ORDER (SECURE - BACKEND ONLY)
+// =======================================================
+
 import { NextRequest, NextResponse } from 'next/server'
 import { capturePayPalOrder } from '@/lib/paypal-api'
 import { 
   paymentsCollection, 
   subscriptionsCollection, 
-  plansCollection 
+  plansCollection,
+  gymsCollection 
 } from '@/lib/db'
 import { calculatePeriodEnd } from '@/lib/subscription'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { orderId, userId, gymId, planId } = body
+    const { orderID, userId, gymId, planId } = body
 
-    console.log('[PayPal] Capture order request:', { orderId, userId, gymId, planId })
+    console.log('[API] Capture order request:', { orderID, userId, gymId, planId })
 
-    if (!orderId) {
+    // Validate required fields
+    if (!orderID) {
       return NextResponse.json(
         { error: 'Order ID is required' },
         { status: 400 }
@@ -22,36 +28,42 @@ export async function POST(req: NextRequest) {
     }
 
     // Capture payment via PayPal API (SECURE - uses secret key)
-    const result = await capturePayPalOrder(orderId)
+    const result = await capturePayPalOrder(orderID)
 
     if (!result.success) {
       return NextResponse.json(
-        { success: false, error: result.error || 'Payment capture failed' },
+        { error: result.error || 'Payment capture failed' },
         { status: 400 }
       )
     }
 
-    // Extract payment details
+    // Extract payment details from capture result
     const captureData = result.data
     const purchaseUnit = captureData?.purchase_units?.[0]
     const paymentAmount = purchaseUnit?.payments?.captures?.[0]?.amount?.value || '0'
     const paymentCurrency = purchaseUnit?.payments?.captures?.[0]?.amount?.currency_code || 'USD'
+    const payerEmail = captureData?.payer?.email_address
 
-    console.log('[PayPal] Payment captured:', { orderId, amount: paymentAmount })
+    console.log('[API] Payment captured:', {
+      orderID,
+      amount: paymentAmount,
+      currency: paymentCurrency,
+      payer: payerEmail
+    })
 
     // Update payment record
     try {
-      await paymentsCollection.update(orderId, {
+      await paymentsCollection.update(orderID, {
         status: 'completed',
         capturedAt: new Date(),
         amount: paymentAmount,
         currency: paymentCurrency,
       })
     } catch (dbError) {
-      console.error('[PayPal] Failed to update payment:', dbError)
+      console.error('[API] Failed to update payment:', dbError)
     }
 
-    // Create subscription if plan info provided
+    // Create subscription if userId and planId provided
     if (userId && gymId && planId) {
       try {
         const plan = await plansCollection.find(planId)
@@ -64,27 +76,29 @@ export async function POST(req: NextRequest) {
           status: 'active',
           currentPeriodStart: Date.now(),
           currentPeriodEnd: calculatePeriodEnd(interval),
-          paypalOrderId: orderId,
+          paypalOrderId: orderID,
         })
 
-        console.log('[PayPal] Subscription created for user:', userId)
+        console.log('[API] Subscription created for user:', userId)
 
       } catch (subError) {
-        console.error('[PayPal] Failed to create subscription:', subError)
+        console.error('[API] Failed to create subscription:', subError)
+        // Payment is captured, but subscription creation failed
+        // This should be handled by webhook or manual review
       }
     }
 
     return NextResponse.json({
       success: true,
-      orderId,
+      orderId: orderID,
       amount: paymentAmount,
       currency: paymentCurrency,
     })
 
   } catch (error: any) {
-    console.error('[PayPal] Capture order error:', error)
+    console.error('[API] Capture order error:', error)
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to capture payment' },
+      { error: error.message || 'Failed to capture payment' },
       { status: 500 }
     )
   }
