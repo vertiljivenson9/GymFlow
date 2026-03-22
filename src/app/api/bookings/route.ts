@@ -1,8 +1,21 @@
+export const runtime = 'edge';
+
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/firebase-admin'
+import { getDb } from '@/lib/firebase-admin'
 
 export async function POST(request: Request) {
   try {
+    const db = await getDb()
+
+    // Demo mode if Firebase Admin not configured
+    if (!db) {
+      return NextResponse.json({
+        success: true,
+        demo: true,
+        message: 'Firebase Admin not configured - running in demo mode'
+      })
+    }
+
     const body = await request.json()
     const { serviceId, serviceName, date, time, timeSlotId, customerName, customerEmail, customerPhone, price } = body
 
@@ -28,7 +41,7 @@ export async function POST(request: Request) {
       data: {
         id: bookingRef.id,
         ...bookingData,
-      },
+      }
     })
   } catch (error) {
     console.error('Booking error:', error)
@@ -40,9 +53,20 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  const db = await getDb()
+
+  // Demo mode if Firebase Admin not configured
+  if (!db) {
+    return NextResponse.json({
+      success: true,
+      demo: true,
+      data: []
+    })
+  }
+
   try {
     const bookingsSnapshot = await db.collection('bookings').orderBy('createdAt', 'desc').limit(50).get()
-    const bookings = bookingsSnapshot.docs.map(doc => ({
+    const bookings = bookingsSnapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
     }))

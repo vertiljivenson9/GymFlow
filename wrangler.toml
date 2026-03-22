@@ -1,0 +1,11 @@
+name = "gymflow"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[vars]
+FIREBASE_PROJECT_ID = "book-a-session-d2938"
+
+[env.production]
+name = "gymflow"
+compatibility_flags = ["nodejs_compat"]

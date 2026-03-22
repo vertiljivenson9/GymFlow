@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server'
 import { setupGym } from '../../../../lib/services/authService'
 import { GymSetupSchema } from '../../../../lib/services/authService'

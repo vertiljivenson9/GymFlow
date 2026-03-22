@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server'
 import { register } from '../../../../lib/services/authService'
 import { RegisterSchema } from '../../../../lib/services/authService'

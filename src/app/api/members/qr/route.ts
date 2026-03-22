@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 // QR Access API - No login required for members
 import { NextRequest, NextResponse } from 'next/server'
 import { validateQRAccess } from '../../../../lib/services/memberService'

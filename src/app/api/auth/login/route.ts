@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server'
 import { login } from '../../../../lib/services/authService'
 import { LoginSchema } from '../../../../lib/services/authService'

@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 // Today's Workout API
 import { NextRequest, NextResponse } from 'next/server'
 import { getTodayWorkout } from '../../../../lib/services/workoutService'

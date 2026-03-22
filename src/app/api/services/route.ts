@@ -1,5 +1,7 @@
+export const runtime = 'edge';
+
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/firebase-admin'
+import { getDb } from '@/lib/firebase-admin'
 
 const DEFAULT_SERVICES = [
   {
@@ -41,14 +43,21 @@ const DEFAULT_SERVICES = [
 ]
 
 export async function GET() {
+  const db = await getDb()
+
+  // Demo mode - sin Firebase
+  if (!db) {
+    return NextResponse.json({ success: true, demo: true, data: DEFAULT_SERVICES })
+  }
+
   try {
     const servicesSnapshot = await db.collection('services').where('active', '==', true).get()
-    
+
     if (servicesSnapshot.empty) {
       return NextResponse.json({ success: true, data: DEFAULT_SERVICES })
     }
 
-    const services = servicesSnapshot.docs.map(doc => ({
+    const services = servicesSnapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
     }))
