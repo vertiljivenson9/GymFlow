@@ -1694,7 +1694,18 @@ function TemplateEditor({
 // QR PANEL
 // ============================================
 function QRPanel({ gym, members }: { gym: any; members: Member[] }) {
-  const gymData = { gymId: gym?.id || 'demo-gym', name: gym?.name || 'GymFlow Demo', type: 'gymflow-access' }
+  // Generate the full URL for the gym check-in page
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gym-flow-wine.vercel.app'
+  const gymId = gym?.id || gym?.gymId || 'demo-gym'
+  const gymSlug = gym?.slug || gymId
+  
+  // QR URL that opens the gym page
+  const gymQrUrl = `${baseUrl}/gym/${gymSlug}`
+  
+  // Member QR URLs
+  const getMemberQrUrl = (member: Member) => {
+    return `${baseUrl}/gym/${gymSlug}?member=${member.id}&code=${member.qrCode}`
+  }
 
   return (
     <div style={{ textAlign: 'center', padding: '2rem', backgroundColor: '#fff', border: '1px solid #e5e5e5' }}>
@@ -1711,22 +1722,28 @@ function QRPanel({ gym, members }: { gym: any; members: Member[] }) {
         marginBottom: '1rem'
       }}>
         <QRCodeSVG 
-          value={JSON.stringify(gymData)} 
+          value={gymQrUrl} 
           size={180}
           level="H"
         />
       </div>
       
-      <p style={{ fontSize: '0.75rem', color: '#999', marginBottom: '2rem' }}>
+      <p style={{ fontSize: '0.75rem', color: '#999', marginBottom: '0.5rem' }}>
         Escanea con la cámara de tu teléfono
+      </p>
+      <p style={{ fontSize: '0.7rem', color: '#003087', marginBottom: '2rem', wordBreak: 'break-all', padding: '0 1rem' }}>
+        URL: {gymQrUrl}
       </p>
       
       <div style={{ borderTop: '1px solid #e5e5e5', paddingTop: '2rem', marginTop: '1rem' }}>
         <h4 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Códigos QR de Miembros</h4>
+        <p style={{ color: '#666', fontSize: '0.75rem', marginBottom: '1.5rem' }}>
+          Cada miembro tiene un código único para acceso rápido
+        </p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           {members.map((m) => (
-            <div key={m.id} style={{ padding: '1rem', border: '1px solid #e5e5e5', textAlign: 'center', backgroundColor: '#fafafa' }}>
-              <QRCodeSVG value={m.qrCode} size={100} />
+            <div key={m.id} style={{ padding: '1rem', border: '1px solid #e5e5e5', textAlign: 'center', backgroundColor: '#fafafa', borderRadius: '8px' }}>
+              <QRCodeSVG value={getMemberQrUrl(m)} size={100} />
               <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>{m.name}</p>
               <p style={{ fontSize: '0.7rem', color: '#999' }}>{m.qrCode}</p>
             </div>

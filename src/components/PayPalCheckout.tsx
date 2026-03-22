@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface PayPalCheckoutProps {
   amount: string
@@ -24,103 +24,175 @@ export function PayPalCheckout({
   onError
 }: PayPalCheckoutProps) {
   const [isLoading, setIsLoading] = useState(true)
-  const [paypalLoaded, setPaypalLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [paypalReady, setPaypalReady] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const buttonsRendered = useRef(false)
 
+  // Load PayPal SDK
   useEffect(() => {
-    // Check if PayPal SDK is already loaded
-    if (window.paypal) {
-      setPaypalLoaded(true)
+    // Only run on client
+    if (typeof window === 'undefined') return
+
+    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
+    
+    if (!clientId) {
+      console.error('PayPal Client ID not configured')
+      setError('PayPal no está configurado. Contacta al administrador.')
       setIsLoading(false)
       return
     }
 
-    // Load PayPal SDK
-    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
-    if (!clientId) {
-      onError('PayPal not configured')
+    // Check if SDK already loaded
+    if (window.paypal) {
+      console.log('PayPal SDK already loaded')
+      setPaypalReady(true)
       setIsLoading(false)
       return
+    }
+
+    console.log('Loading PayPal SDK with client ID:', clientId.substring(0, 10) + '...')
+    
+    // Check for existing script
+    const existingScript = document.querySelector(`script[src*="paypal.com/sdk"]`)
+    if (existingScript) {
+      existingScript.remove()
     }
 
     const script = document.createElement('script')
-    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${currency}`
+    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${currency}&intent=capture`
     script.async = true
+    script.setAttribute('data-partner-attribution-id', 'GymFlow')
+    
     script.onload = () => {
-      setPaypalLoaded(true)
+      console.log('PayPal SDK loaded successfully')
+      setPaypalReady(true)
       setIsLoading(false)
     }
-    script.onerror = () => {
-      onError('Failed to load PayPal')
+    
+    script.onerror = (e) => {
+      console.error('Failed to load PayPal SDK:', e)
+      setError('Error al cargar PayPal. Verifica tu conexión.')
       setIsLoading(false)
     }
+    
     document.body.appendChild(script)
 
     return () => {
-      // Cleanup if needed
+      // Cleanup script on unmount
+      if (script && script.parentNode) {
+        script.parentNode.removeChild(script)
+      }
     }
-  }, [currency, onError])
+  }, [currency])
 
+  // Render PayPal buttons
   useEffect(() => {
-    if (!paypalLoaded || !window.paypal) return
+    if (!paypalReady || !window.paypal || !containerRef.current || buttonsRendered.current) return
 
-    window.paypal.Buttons({
-      style: {
-        layout: 'vertical',
-        color: 'black',
-        shape: 'rect',
-        label: 'paypal',
-        height: 50,
-      },
-      createOrder: async () => {
-        try {
-          const response = await fetch('/api/paypal/create-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount, currency }),
-          })
-          const data = await response.json()
-          return data.orderId
-        } catch (error) {
-          onError('Failed to create order')
-          throw error
-        }
-      },
-      onApprove: async (data: any) => {
-        try {
-          const response = await fetch('/api/paypal/capture-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId: data.orderID }),
-          })
-          const result = await response.json()
+    console.log('Rendering PayPal buttons...')
 
-          if (result.success) {
-            onSuccess()
-          } else {
-            onError('Payment verification failed')
+    try {
+      // Clear container first
+      containerRef.current.innerHTML = ''
+
+      window.paypal.Buttons({
+        style: {
+          layout: 'vertical',
+          color: 'black',
+          shape: 'rect',
+          label: 'paypal',
+          height: 50,
+        },
+        createOrder: async (data: any, actions: any) => {
+          console.log('Creating PayPal order...')
+          try {
+            const response = await fetch('/api/paypal/create-order', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ amount, currency }),
+            })
+            const data = await response.json()
+            
+            if (!data.orderId) {
+              throw new Error('No order ID returned')
+            }
+            
+            console.log('Order created:', data.orderId)
+            return data.orderId
+          } catch (error) {
+            console.error('Error creating order:', error)
+            onError('Error al crear la orden')
+            throw error
           }
-        } catch (error) {
-          onError('Failed to capture payment')
+        },
+        onApprove: async (data: any, actions: any) => {
+          console.log('Payment approved, capturing...', data.orderID)
+          try {
+            const response = await fetch('/api/paypal/capture-order', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderId: data.orderID }),
+            })
+            const result = await response.json()
+
+            if (result.success) {
+              console.log('Payment captured successfully')
+              onSuccess()
+            } else {
+              console.error('Payment capture failed:', result)
+              onError('Error al verificar el pago')
+            }
+          } catch (error) {
+            console.error('Error capturing payment:', error)
+            onError('Error al procesar el pago')
+          }
+        },
+        onError: (err: any) => {
+          console.error('PayPal button error:', err)
+          onError('Error en PayPal. Intenta de nuevo.')
+        },
+        onCancel: () => {
+          console.log('Payment cancelled by user')
         }
-      },
-      onError: (err: any) => {
-        onError('PayPal error occurred')
-      },
-    }).render('#paypal-button-container')
+      }).render(containerRef.current)
+      
+      buttonsRendered.current = true
+      console.log('PayPal buttons rendered successfully')
+      
+    } catch (error) {
+      console.error('Error rendering PayPal buttons:', error)
+      setError('Error al mostrar botones de PayPal')
+    }
+  }, [paypalReady, amount, currency, onSuccess, onError])
 
-  }, [paypalLoaded, amount, currency, onSuccess, onError])
+  // Show error state
+  if (error) {
+    return (
+      <div style={{ padding: '1.5rem', textAlign: 'center', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px' }}>
+        <p style={{ color: '#dc2626', marginBottom: '1rem' }}>{error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          style={{ padding: '0.5rem 1rem', backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+        >
+          Reintentar
+        </button>
+      </div>
+    )
+  }
 
+  // Show loading state
   if (isLoading) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
         <div style={{
-          width: '24px',
-          height: '24px',
+          width: '32px',
+          height: '32px',
           border: '3px solid #f3f3f3',
-          borderTop: '3px solid #000',
+          borderTop: '3px solid #003087',
           borderRadius: '50%',
           animation: 'spin 1s linear infinite',
-          margin: '0 auto'
+          margin: '0 auto 1rem'
         }} />
         <style>{`
           @keyframes spin {
@@ -128,6 +200,7 @@ export function PayPalCheckout({
             100% { transform: rotate(360deg); }
           }
         `}</style>
+        <p style={{ color: '#666', fontSize: '0.875rem' }}>Cargando PayPal...</p>
       </div>
     )
   }
@@ -135,9 +208,9 @@ export function PayPalCheckout({
   return (
     <div>
       <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
-        <p style={{ fontSize: '0.875rem', color: '#666' }}>Pay securely with PayPal</p>
+        <p style={{ fontSize: '0.875rem', color: '#666' }}>Pago seguro con PayPal</p>
       </div>
-      <div id="paypal-button-container" />
+      <div ref={containerRef} id="paypal-button-container" />
     </div>
   )
 }

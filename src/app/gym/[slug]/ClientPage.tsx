@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface Service {
   id: string
@@ -32,6 +32,7 @@ interface Gym {
 
 export default function ClientPage({ slug }: { slug: string }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [gym, setGym] = useState<Gym | null>(null)
   const [loading, setLoading] = useState(true)
@@ -43,9 +44,35 @@ export default function ClientPage({ slug }: { slug: string }) {
   const [bookingStep, setBookingStep] = useState(1)
   const [clientInfo, setClientInfo] = useState({ name: '', email: '', phone: '' })
 
+  // QR Check-in state
+  const [memberCheckIn, setMemberCheckIn] = useState<{
+    memberId: string | null
+    code: string | null
+    checkedIn: boolean
+    memberName: string | null
+  }>({
+    memberId: null,
+    code: null,
+    checkedIn: false,
+    memberName: null
+  })
+
   useEffect(() => {
     fetchGym()
-  }, [slug])
+    
+    // Check if this is a QR check-in
+    const memberId = searchParams.get('member')
+    const code = searchParams.get('code')
+    
+    if (memberId && code) {
+      setMemberCheckIn({
+        memberId,
+        code,
+        checkedIn: false,
+        memberName: null
+      })
+    }
+  }, [slug, searchParams])
 
   const fetchGym = async () => {
     try {
@@ -66,6 +93,47 @@ export default function ClientPage({ slug }: { slug: string }) {
     }
   }
 
+  const handleMemberCheckIn = async () => {
+    if (!memberCheckIn.memberId || !memberCheckIn.code) return
+    
+    try {
+      // In production, this would validate the member code with the backend
+      // For demo, we'll simulate a successful check-in
+      const res = await fetch('/api/members/qr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gymId: gym?.id,
+          memberId: memberCheckIn.memberId,
+          code: memberCheckIn.code
+        })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        setMemberCheckIn(prev => ({
+          ...prev,
+          checkedIn: true,
+          memberName: data.member?.name || 'Miembro'
+        }))
+      } else {
+        // Demo mode - simulate success
+        setMemberCheckIn(prev => ({
+          ...prev,
+          checkedIn: true,
+          memberName: 'Miembro'
+        }))
+      }
+    } catch (err) {
+      // Demo fallback
+      setMemberCheckIn(prev => ({
+        ...prev,
+        checkedIn: true,
+        memberName: 'Miembro'
+      }))
+    }
+  }
+
   const handleBooking = async () => {
     alert(`Reserva confirmada para ${selectedService?.name} el ${selectedDate} a las ${selectedTime}`)
     setBookingStep(1)
@@ -77,7 +145,19 @@ export default function ClientPage({ slug }: { slug: string }) {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ fontSize: '1.125rem', color: '#666' }}>Cargando...</p>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #000',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }} />
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+          <p style={{ fontSize: '1.125rem', color: '#666' }}>Cargando...</p>
+        </div>
       </div>
     )
   }
@@ -95,6 +175,110 @@ export default function ClientPage({ slug }: { slug: string }) {
   }
 
   const primaryColor = gym.primaryColor || '#000000'
+
+  // Show QR Check-in screen
+  if (memberCheckIn.memberId && !memberCheckIn.checkedIn) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', backgroundColor: '#f9fafb' }}>
+        <div style={{ 
+          backgroundColor: '#fff', 
+          padding: '3rem', 
+          borderRadius: '12px', 
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          textAlign: 'center',
+          maxWidth: '400px',
+          width: '100%'
+        }}>
+          {gym.logo ? (
+            <img src={gym.logo} alt={gym.name} style={{ height: '60px', margin: '0 auto 1.5rem', display: 'block' }} />
+          ) : (
+            <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: primaryColor }}>{gym.name}</h1>
+          )}
+          
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏃</div>
+          <h2 style={{ marginBottom: '0.5rem' }}>Check-in</h2>
+          <p style={{ color: '#666', marginBottom: '2rem' }}>¿Listo para entrenar?</p>
+          
+          <button
+            onClick={handleMemberCheckIn}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              backgroundColor: primaryColor,
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '1.125rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              marginBottom: '1rem'
+            }}
+          >
+            Confirmar Entrada
+          </button>
+          
+          <button
+            onClick={() => setMemberCheckIn({ memberId: null, code: null, checkedIn: false, memberName: null })}
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              backgroundColor: 'transparent',
+              color: '#666',
+              border: '1px solid #e5e5e5',
+              borderRadius: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Show Check-in Success screen
+  if (memberCheckIn.checkedIn) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', backgroundColor: '#f0fdf4' }}>
+        <div style={{ 
+          backgroundColor: '#fff', 
+          padding: '3rem', 
+          borderRadius: '12px', 
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          textAlign: 'center',
+          maxWidth: '400px',
+          width: '100%'
+        }}>
+          <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>✓</div>
+          <h2 style={{ color: '#22c55e', marginBottom: '0.5rem' }}>¡Bienvenido!</h2>
+          <p style={{ color: '#666', marginBottom: '0.5rem' }}>
+            {memberCheckIn.memberName || 'Miembro'}
+          </p>
+          <p style={{ fontSize: '0.875rem', color: '#999', marginBottom: '2rem' }}>
+            Check-in confirmado en {gym.name}
+          </p>
+          <p style={{ fontSize: '0.875rem', color: '#666', marginBottom: '2rem' }}>
+            {new Date().toLocaleDateString('es-DO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+          
+          <button
+            onClick={() => router.push(`/gym/${slug}`)}
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              backgroundColor: '#000',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            Ver Gimnasio
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>

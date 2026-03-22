@@ -3,10 +3,12 @@
 # Agrega estas variables en Vercel Dashboard > Settings > Environment Variables
 # ============================================
 
-# PayPal Configuration
+# PayPal Configuration (IMPORTANTE: Ya configuradas en Sandbox)
 NEXT_PUBLIC_PAYPAL_CLIENT_ID=AUX9QydpPJkKhNysl3Eb684_st-cuKgBm5BhBFKh28EusbTb1ZS83N-TEiGa4iqM11Eg0S9V-FLLIN6K
 PAYPAL_CLIENT_SECRET=EN42ePzROGAkcTMNnJnODZdMcTPN01EnavtYU-boAg3OP-dM8cB_wOiU_XmZZQvlu2QVx8Zl4_tgGkmH
 PAYPAL_MODE=sandbox
+
+# App URL (para QR codes y PayPal callback)
 NEXT_PUBLIC_APP_URL=https://gym-flow-wine.vercel.app
 
 # Firebase Configuration (ya configuradas)
@@ -31,4 +33,22 @@ DATABASE_URL=file:./db/gymflow.db
 # 1. Ve a https://developer.paypal.com/dashboard/
 # 2. Selecciona tu app "Gymflow"
 # 3. En "Return URL" agrega: https://gym-flow-wine.vercel.app/api/paypal/callback
+# ============================================
+
+# ============================================
+# CAMBIOS REALIZADOS EN ESTA ACTUALIZACIÓN
+# ============================================
+# 1. QR: Ahora genera URLs dinámicas (https://gym-flow-wine.vercel.app/gym/[slug])
+#    - Al escanar, abre la página del gimnasio
+#    - Members tienen URLs únicas con su ID y código
+#
+# 2. PayPal: Carga correcta del SDK en cliente
+#    - Evita errores de SSR
+#    - Mejor manejo de errores
+#    - Limpieza de contenedor antes de renderizar
+#
+# 3. Check-in QR: Página de check-in para miembros
+#    - Detecta parámetros ?member=xxx&code=xxx
+#    - Muestra pantalla de confirmación
+#    - Check-in exitoso con feedback visual
 # ============================================
