@@ -1,0 +1,34 @@
+# ============================================
+# VARIABLES DE ENTORNO PARA VERCEL
+# Agrega estas variables en Vercel Dashboard > Settings > Environment Variables
+# ============================================
+
+# PayPal Configuration
+NEXT_PUBLIC_PAYPAL_CLIENT_ID=AUX9QydpPJkKhNysl3Eb684_st-cuKgBm5BhBFKh28EusbTb1ZS83N-TEiGa4iqM11Eg0S9V-FLLIN6K
+PAYPAL_CLIENT_SECRET=EN42ePzROGAkcTMNnJnODZdMcTPN01EnavtYU-boAg3OP-dM8cB_wOiU_XmZZQvlu2QVx8Zl4_tgGkmH
+PAYPAL_MODE=sandbox
+NEXT_PUBLIC_APP_URL=https://gym-flow-wine.vercel.app
+
+# Firebase Configuration (ya configuradas)
+FIREBASE_API_KEY=AIzaSyB4KCTV87pUqee_HeH1VBZ1buasDRI4n4o
+FIREBASE_AUTH_DOMAIN=book-a-session-d2938.firebaseapp.com
+FIREBASE_PROJECT_ID=book-a-session-d2938
+FIREBASE_STORAGE_BUCKET=book-a-session-d2938.firebasestorage.app
+FIREBASE_MESSAGING_SENDER_ID=562685317198
+FIREBASE_APP_ID=1:562685317198:web:f50340193373bbbc15731f
+FIREBASE_MEASUREMENT_ID=G-GM2Q31PEBS
+FIREBASE_DATABASE_URL=https://book-a-session-d2938-default-rtdb.firebaseio.com
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-fbsvc@book-a-session-d2938.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY=[pegar la private key completa con \\n]
+
+# Database
+DATABASE_URL=file:./db/gymflow.db
+
+# ============================================
+# IMPORTANTE: Configurar PayPal Return URL
+# ============================================
+# En tu PayPal Developer Dashboard:
+# 1. Ve a https://developer.paypal.com/dashboard/
+# 2. Selecciona tu app "Gymflow"
+# 3. En "Return URL" agrega: https://gym-flow-wine.vercel.app/api/paypal/callback
+# ============================================

@@ -6,7 +6,7 @@ import { QRCodeSVG } from 'qrcode.react'
 // ============================================
 // TYPES
 // ============================================
-type View = 'landing' | 'login' | 'register' | 'setup' | 'dashboard' | 'trainer' | 'member-qr' | 'member-workout' | 'template-editor' | 'subscription'
+type View = 'landing' | 'login' | 'register' | 'setup' | 'dashboard' | 'trainer' | 'member-qr' | 'member-workout' | 'template-editor' | 'subscription' | 'account' | 'membership-payment'
 type Role = 'owner' | 'trainer' | 'member'
 
 interface User {
@@ -363,6 +363,25 @@ export default function GymFlowApp() {
           onMemberSelect={(m: Member) => { setMember(m); setView('member-workout'); }}
           onEditTemplate={(t: Template) => { setSelectedTemplate(t); setView('template-editor'); }}
           onCreateTemplate={() => { setSelectedTemplate(null); setView('template-editor'); }}
+          onViewAccount={() => setView('account')}
+          onManageSubscription={() => setView('subscription')}
+        />
+      )}
+      
+      {view === 'account' && user && (
+        <AccountView 
+          gymId={user.gymId} 
+          gymName={gym?.name || 'Mi Gimnasio'}
+          onBack={() => setView('trainer')}
+        />
+      )}
+      
+      {view === 'subscription' && user && (
+        <SubscriptionView 
+          gymId={user.gymId} 
+          gymName={gym?.name || 'Mi Gimnasio'}
+          onComplete={() => setView('trainer')}
+          onBack={() => setView('trainer')}
         />
       )}
       
@@ -529,7 +548,9 @@ function TrainerDashboard({
   exercises,
   onMemberSelect, 
   onEditTemplate,
-  onCreateTemplate 
+  onCreateTemplate,
+  onViewAccount,
+  onManageSubscription
 }: { 
   gym: any
   templates: Template[]
@@ -537,14 +558,51 @@ function TrainerDashboard({
   onMemberSelect: (m: Member) => void
   onEditTemplate: (t: Template) => void
   onCreateTemplate: () => void
+  onViewAccount: () => void
+  onManageSubscription: () => void
 }) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'exercises' | 'templates' | 'qr'>('templates')
+  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'exercises' | 'templates' | 'qr' | 'account'>('templates')
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem 1rem' }}>
       <h1 style={{ marginBottom: '0.5rem' }}>{gym?.name || 'Mi Gimnasio'}</h1>
       <p style={{ color: '#666', marginBottom: '2rem' }}>Panel de administración</p>
       
+      {/* Quick Actions Bar */}
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+        <button
+          onClick={onViewAccount}
+          style={{
+            padding: '0.75rem 1.5rem',
+            backgroundColor: '#003087',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '0.875rem',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+          }}
+        >
+          <span>💳</span> Ver Cuenta
+        </button>
+        <button
+          onClick={onManageSubscription}
+          style={{
+            padding: '0.75rem 1.5rem',
+            backgroundColor: '#fff',
+            color: '#000',
+            border: '1px solid #000',
+            cursor: 'pointer',
+            fontSize: '0.875rem',
+            borderRadius: '4px',
+          }}
+        >
+          Gestionar Suscripción
+        </button>
+      </div>
+
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '1px solid #e5e5e5', paddingBottom: '1rem' }}>
         {[
@@ -1766,4 +1824,312 @@ function MemberWorkoutView({ member, onBack }: { member: Member; onBack: () => v
       )}
     </div>
   )
+}
+
+// ============================================
+// ACCOUNT VIEW (PayPal Connection & Balance)
+// ============================================
+function AccountView({ gymId, gymName, onBack }: { gymId: string; gymName: string; onBack: () => void }) {
+  const [loading, setLoading] = useState(true)
+  const [connecting, setConnecting] = useState(false)
+  const [connection, setConnection] = useState<{ connected: boolean; email?: string; balance?: { total: string; currency: string } }>({ connected: false })
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'settings'>('overview')
+
+  useEffect(() => {
+    loadPayPalStatus()
+  }, [gymId])
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get('paypal_connected') === 'true') {
+      const email = urlParams.get('email')
+      setConnection({ connected: true, email: email || '' })
+      window.history.replaceState({}, '', window.location.pathname)
+      loadPayPalStatus()
+    }
+  }, [])
+
+  const loadPayPalStatus = async () => {
+    try {
+      setLoading(true)
+      const [balanceRes, transactionsRes] = await Promise.all([
+        fetch('/api/paypal/balance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gymId }),
+        }),
+        fetch('/api/paypal/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gymId }),
+        }),
+      ])
+
+      if (balanceRes.ok) {
+        const balanceData = await balanceRes.json()
+        setConnection({
+          connected: balanceData.connected,
+          email: balanceData.email,
+          balance: balanceData.balance,
+        })
+      }
+
+      if (transactionsRes.ok) {
+        const transactionsData = await transactionsRes.json()
+        setTransactions(transactionsData.transactions || [])
+      }
+    } catch (error) {
+      console.error('Error loading PayPal status:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleConnectPayPal = async () => {
+    try {
+      setConnecting(true)
+      const res = await fetch('/api/paypal/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gymId }),
+      })
+      const data = await res.json()
+      if (data.connectUrl) {
+        window.location.href = data.connectUrl
+      }
+    } catch (error) {
+      console.error('Error connecting PayPal:', error)
+    } finally {
+      setConnecting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div style={{ padding: '4rem', textAlign: 'center' }}>
+        <div style={{ width: '32px', height: '32px', border: '3px solid #f3f3f3', borderTop: '3px solid #000', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+        <p style={{ marginTop: '1rem', color: '#666' }}>Cargando...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', marginBottom: '1rem', fontSize: '0.875rem' }}>← Volver</button>
+      
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>Mi Cuenta</h1>
+        <p style={{ color: '#666' }}>{gymName}</p>
+      </div>
+
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '1px solid #e5e5e5', paddingBottom: '1rem' }}>
+        {['overview', 'transactions', 'settings'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab as any)}
+            style={{
+              padding: '0.5rem 1rem',
+              border: 'none',
+              background: activeTab === tab ? '#000' : 'none',
+              color: activeTab === tab ? '#fff' : '#666',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+            }}
+          >
+            {tab === 'overview' ? 'Resumen' : tab === 'transactions' ? 'Transacciones' : 'Configuración'}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'overview' && (
+        <div>
+          <div style={{ padding: '2rem', backgroundColor: '#fff', border: '1px solid #e5e5e5', marginBottom: '2rem', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ width: '48px', height: '48px', backgroundColor: connection.connected ? '#003087' : '#f5f5f5', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: connection.connected ? '#fff' : '#999', fontSize: '1.5rem', fontWeight: 700 }}>P</div>
+                <div>
+                  <h3 style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Cuenta PayPal</h3>
+                  <p style={{ color: '#666', fontSize: '0.875rem' }}>{connection.connected ? `Conectada: ${connection.email}` : 'No conectada'}</p>
+                </div>
+              </div>
+              {!connection.connected && (
+                <button onClick={handleConnectPayPal} disabled={connecting} style={{ padding: '0.75rem 1.5rem', backgroundColor: '#003087', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '0.875rem', borderRadius: '4px' }}>
+                  {connecting ? 'Conectando...' : 'Conectar PayPal'}
+                </button>
+              )}
+            </div>
+            {connection.connected && connection.balance && (
+              <div style={{ marginTop: '1.5rem', padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
+                <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Saldo disponible</p>
+                <p style={{ fontSize: '2rem', fontWeight: 700 }}>${connection.balance.total} <span style={{ fontSize: '1rem', color: '#666' }}>{connection.balance.currency}</span></p>
+              </div>
+            )}
+          </div>
+
+          {connection.connected && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <div style={{ padding: '1.5rem', backgroundColor: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}>
+                <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Este Mes</p>
+                <p style={{ fontSize: '1.5rem', fontWeight: 700 }}>${transactions.filter(t => new Date(t.date).getMonth() === new Date().getMonth()).reduce((sum, t) => sum + parseFloat(t.amount || '0'), 0).toFixed(2)}</p>
+              </div>
+              <div style={{ padding: '1.5rem', backgroundColor: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}>
+                <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Transacciones</p>
+                <p style={{ fontSize: '1.5rem', fontWeight: 700 }}>{transactions.length}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'transactions' && (
+        <div style={{ backgroundColor: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}>
+          {transactions.length === 0 ? (
+            <div style={{ padding: '3rem', textAlign: 'center' }}>
+              <p style={{ color: '#666' }}>No hay transacciones recientes</p>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e5e5e5', backgroundColor: '#f9f9f9' }}>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#666' }}>Fecha</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#666' }}>Cliente</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', fontSize: '0.75rem', textTransform: 'uppercase', color: '#666' }}>Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.slice(0, 10).map((t, i) => (
+                  <tr key={t.id || i} style={{ borderBottom: '1px solid #e5e5e5' }}>
+                    <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{new Date(t.date).toLocaleDateString('es-DO')}</td>
+                    <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{t.payerName || 'N/A'}</td>
+                    <td style={{ padding: '0.75rem', fontWeight: 600 }}>${t.amount} {t.currency}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'settings' && (
+        <div style={{ padding: '2rem', backgroundColor: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}>
+          <h3 style={{ marginBottom: '1.5rem' }}>Configuración de Pagos</h3>
+          <div style={{ marginBottom: '2rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Precio de Membresía Mensual</label>
+            <div style={{ display: 'flex', gap: '0.5rem', maxWidth: '300px' }}>
+              <span style={{ padding: '0.75rem', backgroundColor: '#f5f5f5', border: '1px solid #e5e5e5', borderRight: 'none' }}>$</span>
+              <input type="number" defaultValue="50" style={{ flex: 1, padding: '0.75rem', border: '1px solid #e5e5e5', fontSize: '1rem' }} />
+            </div>
+          </div>
+          <button style={{ padding: '0.75rem 1.5rem', backgroundColor: '#000', color: '#fff', border: 'none', cursor: 'pointer', borderRadius: '4px' }}>Guardar Cambios</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// SUBSCRIPTION VIEW (SaaS Payment)
+// ============================================
+function SubscriptionView({ gymId, gymName, onComplete, onBack }: { gymId: string; gymName: string; onComplete: () => void; onBack: () => void }) {
+  const [selectedPlan, setSelectedPlan] = useState<{ id: string; name: string; price: string } | null>(null)
+  const [showPayment, setShowPayment] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [orderId, setOrderId] = useState<string | null>(null)
+
+  const plans = [
+    { id: 'monthly', name: 'Mensual', price: '49', period: 'mes', features: ['Miembros ilimitados', 'Motor de entrenamiento', 'Acceso QR', 'Soporte email'] },
+    { id: 'yearly', name: 'Anual', price: '470', period: 'año', savings: 'Ahorra $118', features: ['Todo del plan mensual', '2 meses gratis', 'Soporte prioritario', 'Personalización avanzada'] },
+  ]
+
+  const handlePaymentSuccess = async () => {
+    if (!selectedPlan || !orderId) return
+    try {
+      const res = await fetch('/api/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gymId, plan: selectedPlan.id, paypalOrderId: orderId, amount: parseFloat(selectedPlan.price) }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setPaymentStatus('success')
+        setTimeout(onComplete, 2000)
+      } else {
+        setPaymentStatus('error')
+      }
+    } catch {
+      setPaymentStatus('error')
+    }
+  }
+
+  if (paymentStatus === 'success') {
+    return (
+      <div style={{ maxWidth: '500px', margin: '4rem auto', padding: '3rem', textAlign: 'center', backgroundColor: '#fff', border: '2px solid #22c55e', borderRadius: '8px' }}>
+        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>✓</div>
+        <h2 style={{ marginBottom: '0.5rem', color: '#22c55e' }}>¡Suscripción Activada!</h2>
+        <p style={{ color: '#666' }}>Tu gimnasio {gymName} está listo.</p>
+      </div>
+    )
+  }
+
+  if (showPayment && selectedPlan) {
+    return (
+      <div style={{ maxWidth: '500px', margin: '2rem auto', padding: '2rem', backgroundColor: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}>
+        <button onClick={() => setShowPayment(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', marginBottom: '1rem', fontSize: '0.875rem' }}>← Volver</button>
+        <h2 style={{ marginBottom: '0.5rem' }}>Completar Suscripción</h2>
+        <p style={{ color: '#666', marginBottom: '1.5rem' }}>{selectedPlan.name} - ${selectedPlan.price}</p>
+        <div style={{ padding: '1rem', backgroundColor: '#f9fafb', marginBottom: '1.5rem', borderRadius: '4px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+            <span>Total</span>
+            <span>${selectedPlan.price} USD</span>
+          </div>
+        </div>
+        {paymentStatus === 'error' && <div style={{ padding: '1rem', backgroundColor: '#fef2f2', color: '#dc2626', marginBottom: '1rem', borderRadius: '4px' }}>Error con el pago. Intenta de nuevo.</div>}
+        <PayPalCheckout amount={selectedPlan.price} planName={selectedPlan.name} onSuccess={handlePaymentSuccess} onError={() => setPaymentStatus('error')} />
+        <PaymentOrderIdCapture onOrderId={setOrderId} />
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem' }}>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', marginBottom: '1rem', fontSize: '0.875rem' }}>← Volver</button>
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Elige tu Plan</h1>
+        <p style={{ color: '#666' }}>Activa <strong>{gymName}</strong></p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', maxWidth: '700px', margin: '0 auto' }}>
+        {plans.map((plan) => (
+          <div key={plan.id} style={{ padding: '2rem', backgroundColor: '#fff', border: plan.savings ? '2px solid #000' : '1px solid #e5e5e5', borderRadius: '8px', position: 'relative' }}>
+            {plan.savings && <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#000', color: '#fff', padding: '0.25rem 0.75rem', fontSize: '0.75rem', borderRadius: '4px' }}>{plan.savings}</div>}
+            <h3 style={{ marginBottom: '0.5rem' }}>{plan.name}</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: 700 }}>${plan.price}<span style={{ fontSize: '1rem', color: '#666' }}>/{plan.period}</span></p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '1.5rem 0' }}>
+              {plan.features.map((f, i) => <li key={i} style={{ padding: '0.5rem 0' }}>✓ {f}</li>)}
+            </ul>
+            <button onClick={() => { setSelectedPlan(plan); setShowPayment(true) }} style={{ width: '100%', padding: '1rem', backgroundColor: plan.savings ? '#000' : '#fff', color: plan.savings ? '#fff' : '#000', border: plan.savings ? 'none' : '1px solid #000', cursor: 'pointer', borderRadius: '4px' }}>Suscribirse</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Helper to capture order ID
+function PaymentOrderIdCapture({ onOrderId }: { onOrderId: (id: string) => void }) {
+  useEffect(() => {
+    const originalFetch = window.fetch
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args)
+      if (args[0] === '/api/paypal/create-order') {
+        const clone = response.clone()
+        const data = await clone.json()
+        if (data.orderId) onOrderId(data.orderId)
+      }
+      return response
+    }
+    return () => { window.fetch = originalFetch }
+  }, [onOrderId])
+  return null
 }
